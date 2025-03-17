@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import math
 
 # Lista de monedas disponibles
 monedas = [
@@ -20,26 +21,37 @@ monedas = [
     'XCD', 'XDR', 'XOF', 'XPF', 'YER', 'ZAR', 'ZMW', 'ZWL'
 ]
 
-# Function to get the currency conversion and exchange rate with commission
+# Function to get the currency conversion and apply commission
 def convertir_moneda(desde, hacia, cantidad):
-    url = f"https://api.exchangerate-api.com/v4/latest/{desde}"  # Replace with your API URL
+    url = f"https://api.exchangerate-api.com/v4/latest/{desde}"
     response = requests.get(url)
     
     if response.status_code == 200:
         data = response.json()
         tasa_conversion = data['rates'].get(hacia)
+        tasa_euro = data['rates'].get('EUR')  # Tasa de cambio para convertir 1 EUR a la moneda de origen
         
+        # Si la moneda de origen es USD, la comisión es de 4 USD
+        if desde == 'USD':
+            comision = 4  # Comisión fija en USD
+        else:
+            if tasa_euro:
+                # Invertir la tasa de EUR a la moneda de origen
+                tasa_euro_a_origen = (1 / tasa_euro)  # Obtener cuántos de la moneda de origen equivale 1 EUR
+
+                # Convertir la comisión fija de 4 EUR a la moneda de origen
+                comision = 4.05 * tasa_euro_a_origen  # Comisión convertida a la moneda de origen
+            else:
+                return "Error con la tasa de cambio de EUR", None, None
+
         if tasa_conversion:
-            # Calcular la conversión sin la comisión
-            conversion_sin_comision = cantidad * tasa_conversion
+            # Calcular el total que se debe enviar incluyendo la comisión
+            total_a_enviar = cantidad + comision
             
-            # Calcular la comisión (3%)
-            comision = conversion_sin_comision * 0.03
+            # La persona recibe la cantidad enviada, no el total con comisión
+            cantidad_recibida = cantidad * tasa_conversion 
             
-            # Calcular el total con la comisión incluida
-            total_con_comision = conversion_sin_comision + comision
-            
-            return conversion_sin_comision, comision, total_con_comision
+            return cantidad_recibida, comision, total_a_enviar
         else:
             return "Moneda no disponible", None, None
     else:
@@ -47,20 +59,23 @@ def convertir_moneda(desde, hacia, cantidad):
 
 # Streamlit app layout
 st.title("Convertidor de Moneda")
-st.write("Este convertidor de moneda utiliza una API para hacer las conversiones.")
+st.write("Selecciona la moneda de origen, ingresa la cantidad y elige la moneda de destino, luego presiona *Convertir*. \n"
+"Verás el precio de envío (comisión), precio total a enviar y cuánto recibirás en la moneda elegida.")
 
 # Input fields
+st.write("Elige la moneda desde la que harás el cambio")
 moneda_desde = st.selectbox("Selecciona la moneda de origen", monedas)
 cantidad = st.number_input("Ingresa la cantidad que deseas convertir", min_value=1, value=100)
+st.write("Elige la moneda que querrás obtener")
 moneda_hacia = st.selectbox("Selecciona la moneda de destino", monedas)
 
 # Conversion result
 if st.button("Convertir"):
-    conversion_sin_comision, comision, total_con_comision = convertir_moneda(moneda_desde, moneda_hacia, cantidad)
+    cantidad_recibida, comision, total_a_enviar = convertir_moneda(moneda_desde, moneda_hacia, cantidad)
     
-    if isinstance(conversion_sin_comision, float):
-        st.write(f"El valor de la conversión sin comisión es: {conversion_sin_comision:.2f} {moneda_hacia}")
-        st.write(f"Comisión del 3%: {comision:.2f} {moneda_hacia}")
-        st.write(f"El total con la comisión incluida es: {total_con_comision:.2f} {moneda_hacia}")
+    if isinstance(cantidad_recibida, float):
+        st.write(f"Precio de envío: {comision:.2f} {moneda_desde}")
+        st.write(f"En total deberás enviar: {total_a_enviar:.2f} {moneda_desde}")
+        st.write(f"Recibirás: {cantidad_recibida:.2f} {moneda_hacia}")
     else:
-        st.write(conversion_sin_comision)
+        st.write(cantidad_recibida)
