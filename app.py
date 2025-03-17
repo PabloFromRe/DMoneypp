@@ -31,24 +31,24 @@ def convertir_moneda(desde, hacia, cantidad):
         tasa_conversion = data['rates'].get(hacia)
         tasa_euro = data['rates'].get('EUR')  # Tasa de cambio para convertir 1 EUR a la moneda de origen
         
-        # Si la moneda de origen es USD, la comisión es de 4 USD
         if desde == 'USD':
-            comision = 4  # Comisión fija en USD
-        else:
-            if tasa_euro:
-                # Invertir la tasa de EUR a la moneda de origen
-                tasa_euro_a_origen = (1 / tasa_euro)  # Obtener cuántos de la moneda de origen equivale 1 EUR
+            comision = 4.00  # Comisión fija en USD
+        elif desde == 'EUR':
+            comision = 4.00  # Comisión fija en EUR
+        elif tasa_euro:
+            # Invertir la tasa de EUR a la moneda de origen
+            tasa_euro_a_origen = 1 / tasa_euro  # Obtener cuántos de la moneda de origen equivale 1 EUR
 
-                # Convertir la comisión fija de 4 EUR a la moneda de origen
-                comision = 4.00 * tasa_euro_a_origen  # Comisión convertida a la moneda de origen
-            else:
-                return "Error con la tasa de cambio de EUR", None, None
+            # Convertir la comisión fija de 4 EUR a la moneda de origen
+            comision = 4.00 * tasa_euro_a_origen  
+        else:
+            return "Error con la tasa de cambio de EUR", None, None
 
         if tasa_conversion:
             # Calcular el total que se debe enviar incluyendo la comisión
             total_a_enviar = cantidad + comision
             
-            # La persona recibe la cantidad enviada, no el total con comisión
+            # La persona recibe la cantidad convertida por la tasa de cambio
             cantidad_recibida = cantidad * tasa_conversion 
             
             return cantidad_recibida, comision, total_a_enviar
