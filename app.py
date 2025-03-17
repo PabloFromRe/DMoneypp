@@ -40,7 +40,7 @@ def convertir_moneda(desde, hacia, cantidad):
                 tasa_euro_a_origen = (1 / tasa_euro)  # Obtener cuántos de la moneda de origen equivale 1 EUR
 
                 # Convertir la comisión fija de 4 EUR a la moneda de origen
-                comision = 4.05 * tasa_euro_a_origen  # Comisión convertida a la moneda de origen
+                comision = 4.00 * tasa_euro_a_origen  # Comisión convertida a la moneda de origen
             else:
                 return "Error con la tasa de cambio de EUR", None, None
 
